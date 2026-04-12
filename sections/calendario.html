@@ -1,0 +1,58 @@
+<!-- ══ CALENDARIO ══ -->
+<section id="calendario" class="sec">
+  <div class="c">
+    <div class="cal-hd">
+      <div class="an">
+        <span class="etiq">Calendario</span>
+        <h2 class="tit">Actividades institucionales</h2>
+        <p class="sub" style="max-width:480px;margin-top:8px">Consulta las actividades, talleres y eventos programados del CELIDER 08-01.</p>
+      </div>
+      <div class="an d2">
+        <a href="https://wa.me/18496336491?text=Hola,%20quisiera%20información%20sobre%20las%20próximas%20actividades%20del%20CELIDER%2008-01." target="_blank" rel="noopener" class="btn bo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Consultar actividades
+        </a>
+      </div>
+    </div>
+
+    <!-- Widget de calendario -->
+    <div class="cal-widget an">
+      <div class="cal-top">
+        <button class="cal-nav-btn" id="cal-prev" aria-label="Mes anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <span class="cal-month-label" id="cal-month-label"></span>
+        <button class="cal-nav-btn" id="cal-next" aria-label="Mes siguiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-days-grid-wrap">
+          <div class="cal-weekday weekend">Dom</div>
+          <div class="cal-weekday">Lun</div>
+          <div class="cal-weekday">Mar</div>
+          <div class="cal-weekday">Mié</div>
+          <div class="cal-weekday">Jue</div>
+          <div class="cal-weekday">Vie</div>
+          <div class="cal-weekday weekend">Sáb</div>
+        </div>
+        <div class="cal-days-grid" id="cal-days"></div>
+      </div>
+      <div class="cal-legend">
+        <div class="cal-legend-item">
+          <span class="cal-dot today-dot"></span>
+          Hoy
+        </div>
+        <p class="cal-no-events" id="cal-no-events"></p>
+      </div>
+    </div>
+
+  </div>
+</section>

@@ -1,0 +1,185 @@
+/* ══════════════════════════════════════════════
+   CELIDER 08-01 — Layout: topbar, navbar, footer, FAB
+   css/layout.css
+══════════════════════════════════════════════ */
+
+/* ── Top bar ── */
+.topbar {
+  background: var(--a1); color: rgba(255,255,255,.75);
+  font-size: .76rem; text-align: center;
+  padding: 7px 24px; letter-spacing: .02em;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 6px 16px;
+}
+.topbar a { font-weight: 500; transition: color var(--t) }
+.topbar a:hover { text-decoration: underline }
+.topbar .topbar-ig {
+  color: #fff; background: var(--ig-gradient);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; font-weight: 700; font-size: .8rem;
+}
+.topbar .topbar-ig:hover { opacity: .85 }
+.topbar-sep { color: rgba(255,255,255,.2) }
+
+/* ── Navbar ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--w); border-bottom: 1px solid var(--gl);
+  box-shadow: 0 2px 12px rgba(0,34,71,.06);
+  height: var(--nh); display: flex; align-items: center;
+}
+.nav.scrolled { box-shadow: 0 4px 20px rgba(0,34,71,.12) }
+.nav-in {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; max-width: var(--mx); margin: 0 auto; padding: 0 24px;
+}
+
+/* Logo */
+.logo { display: flex; align-items: center; gap: 12px }
+.logo-img-wrap {
+  width: 42px; height: 42px; border-radius: 8px;
+  flex-shrink: 0; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-img-wrap img { width: 100%; height: 100%; object-fit: contain }
+.logo-tx { display: flex; flex-direction: column; line-height: 1.2 }
+.logo-n  { font-family: var(--fd); font-size: 1rem; font-weight: 700; color: var(--a1) }
+.logo-s  { font-size: .67rem; color: var(--gt) }
+
+/* Nav links */
+.nav-links { display: flex; align-items: center; gap: 2px }
+.nav-links a {
+  font-family: var(--fd); font-size: .85rem; font-weight: 500;
+  color: var(--gd); padding: 8px 13px; border-radius: 6px;
+  transition: all var(--t); position: relative;
+}
+.nav-links a:hover,
+.nav-links a.act { color: var(--a3); background: rgba(0,135,241,.07) }
+.nav-cta    { margin-left: 10px; padding: 9px 20px; font-size: .83rem }
+
+/* Hamburger */
+.ham { display: none; flex-direction: column; gap: 5px; padding: 8px; cursor: pointer }
+.ham span { width: 22px; height: 2px; border-radius: 2px; background: var(--a1); transition: all var(--t) }
+.ham.open span:nth-child(1) { transform: translateY(7px) rotate(45deg) }
+.ham.open span:nth-child(2) { opacity: 0 }
+.ham.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg) }
+
+/* Mobile menu */
+.nav-mob {
+  display: none; position: fixed;
+  top: var(--nh); left: 0; right: 0;
+  background: var(--w); border-bottom: 1px solid var(--gl);
+  box-shadow: 0 8px 32px rgba(0,34,71,.12);
+  z-index: 99; padding: 16px 24px 24px;
+  flex-direction: column; gap: 4px;
+}
+.nav-mob.open { display: flex }
+.nav-mob a {
+  font-family: var(--fd); font-size: .95rem; font-weight: 500;
+  color: var(--gd); padding: 12px 16px; border-radius: 8px;
+  transition: all var(--t);
+}
+.nav-mob a:hover { color: var(--a3); background: rgba(0,135,241,.07) }
+.nav-mob .bp   { margin-top: 8px; justify-content: center }
+
+/* ── Footer ── */
+footer {
+  background: var(--a1); color: rgba(255,255,255,.6);
+  position: relative; overflow: hidden;
+}
+footer::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 90% 10%, rgba(0,203,255,.07) 0%, transparent 50%);
+}
+.ft-top {
+  padding: 60px 0 44px; border-bottom: 1px solid rgba(255,255,255,.07);
+  position: relative; z-index: 1;
+}
+.ft-g { display: grid; grid-template-columns: 1.8fr 1fr 1fr; gap: 48px }
+.ft-desc {
+  font-size: .83rem; line-height: 1.75;
+  color: rgba(255,255,255,.48); margin-top: 14px; max-width: 310px;
+}
+.ft-ple { font-size: .74rem; color: rgba(255,255,255,.32); margin-top: 18px; line-height: 1.6 }
+.ft-ple strong { color: rgba(255,255,255,.5) }
+.ft-htit {
+  font-family: var(--fd); font-size: .76rem; font-weight: 700;
+  color: rgba(255,255,255,.88); letter-spacing: .08em;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.ft-links { display: flex; flex-direction: column; gap: 9px }
+.ft-links a { font-size: .84rem; color: rgba(255,255,255,.48); transition: color var(--t) }
+.ft-links a:hover { color: var(--a4) }
+
+/* Footer social — Instagram primero y más prominente */
+.ft-soc { display: flex; align-items: center; gap: 9px; margin-top: 4px; flex-wrap: wrap }
+.ft-sb {
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; transition: all var(--t);
+}
+.ft-sb-ig {
+  width: 42px; height: 42px;
+  background: var(--ig-gradient);
+  box-shadow: 0 3px 12px rgba(193,53,132,.35);
+  border: none;
+}
+.ft-sb-ig:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(193,53,132,.5) }
+.ft-sb-ig svg { width: 18px; height: 18px; color: #fff }
+.ft-sb-sm {
+  width: 35px; height: 35px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.09);
+}
+.ft-sb-sm:hover { background: rgba(0,203,255,.14); border-color: rgba(0,203,255,.28) }
+.ft-sb-sm svg { width: 15px; height: 15px; color: rgba(255,255,255,.55) }
+.ft-sb-sm:hover svg { color: var(--a4) }
+
+.ft-ig-label {
+  font-family: var(--fd); font-size: .68rem; font-weight: 700;
+  background: var(--ig-gradient);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; letter-spacing: .04em;
+}
+
+.ft-bot {
+  padding: 18px 0;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px; position: relative; z-index: 1;
+}
+.ft-copy { font-size: .76rem; color: rgba(255,255,255,.28) }
+.ft-dev  { font-size: .74rem; color: rgba(255,255,255,.28); text-align: right }
+.ft-dev a { color: rgba(0,203,255,.45) }
+.ft-dev a:hover { color: var(--a4); text-decoration: underline }
+.ft-admin-link {
+  font-size: .72rem; color: rgba(255,255,255,.2);
+  transition: color var(--t); margin-left: 12px;
+}
+.ft-admin-link:hover { color: rgba(0,203,255,.5) }
+
+/* ── WhatsApp FAB ── */
+.wafab {
+  position: fixed; bottom: 26px; right: 26px; z-index: 90;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 4px 20px rgba(37,211,102,.4);
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--t);
+}
+.wafab:hover { transform: scale(1.08); box-shadow: 0 8px 28px rgba(37,211,102,.5) }
+.wafab svg   { width: 27px; height: 27px; color: var(--w) }
+.wa-tip {
+  position: absolute; right: 60px; white-space: nowrap;
+  background: var(--a1); color: var(--w);
+  font-family: var(--fd); font-size: .76rem; font-weight: 600;
+  padding: 6px 13px; border-radius: 7px;
+  opacity: 0; pointer-events: none; transition: opacity var(--t);
+}
+.wafab:hover .wa-tip { opacity: 1 }
+
+/* ── Responsive layout ── */
+@media (max-width: 1024px) { .ft-g { grid-template-columns: 1fr 1fr; gap: 36px } }
+@media (max-width: 768px)  {
+  .nav-links, .nav-cta { display: none }
+  .ham { display: flex }
+  .ft-g { grid-template-columns: 1fr; gap: 28px }
+  .ft-bot { flex-direction: column; text-align: center }
+  .ft-dev { text-align: center }
+}
