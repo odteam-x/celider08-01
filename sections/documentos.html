@@ -1,0 +1,42 @@
+<!-- ══ DOCUMENTOS ══ -->
+<section id="documentos" class="sec">
+  <div class="c" style="position:relative;z-index:1">
+    <div class="docs-header">
+      <div class="an">
+        <span class="etiq">Talleres y Documentos</span>
+        <h2 class="tit">Recursos institucionales</h2>
+        <div class="sep"></div>
+        <p class="sub">Accede a los materiales de talleres, documentos normativos y recursos académicos del CELIDER 08-01 y el PLE-RD.</p>
+      </div>
+    </div>
+
+    <!-- Filtros por tipo -->
+    <div class="docs-filters an">
+      <button class="filter-btn active" data-filter="todos">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        Todos
+      </button>
+      <button class="filter-btn" data-filter="taller">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+        Talleres
+      </button>
+      <button class="filter-btn" data-filter="oficial">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Oficiales
+      </button>
+    </div>
+
+    <!-- Grid de documentos (renderizado por JS) -->
+    <div class="docs-grid" id="docs-grid">
+      <!-- Se llena dinámicamente por documentos.js -->
+    </div>
+  </div>
+</section>

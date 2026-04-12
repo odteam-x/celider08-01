@@ -1,0 +1,196 @@
+/* ══════════════════════════════════════════════
+   CELIDER 08-01 — Panel de Administración
+   css/admin.css
+══════════════════════════════════════════════ */
+
+/* ── Reset para admin page ── */
+.admin-body {
+  font-family: var(--fd); background: var(--gb);
+  color: var(--gd); min-height: 100vh;
+}
+
+/* ── Login overlay ── */
+.admin-login {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--a1) 0%, #003570 50%, var(--a2) 100%);
+  padding: 24px;
+}
+.login-box {
+  background: var(--w); border-radius: 20px; padding: 48px 40px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.3);
+}
+.login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px }
+.login-logo img { width: 44px; height: 44px; object-fit: contain }
+.login-logo-tx { display: flex; flex-direction: column; line-height: 1.2 }
+.login-logo-n  { font-size: 1rem; font-weight: 700; color: var(--a1) }
+.login-logo-s  { font-size: .7rem; color: var(--gt) }
+.login-title   { font-size: 1.4rem; font-weight: 700; color: var(--a1); margin-bottom: 6px }
+.login-sub     { font-size: .85rem; color: var(--gt); margin-bottom: 28px }
+
+/* ── Header admin ── */
+.admin-header {
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  color: var(--w); padding: 0 28px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,34,71,.25);
+}
+.admin-header-left { display: flex; align-items: center; gap: 12px }
+.admin-header-logo { display: flex; align-items: center; gap: 10px }
+.admin-header-logo img { width: 32px; height: 32px; object-fit: contain }
+.admin-header-title { font-size: .95rem; font-weight: 700 }
+.admin-header-subtitle { font-size: .72rem; opacity: .6; margin-top: 1px }
+.admin-live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--a4);
+  animation: pulse 2s infinite;
+}
+.admin-logout {
+  padding: 8px 16px; border-radius: var(--rad);
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  color: var(--w); font-family: var(--fd); font-size: .78rem; font-weight: 600;
+  cursor: pointer; transition: all var(--t);
+  display: flex; align-items: center; gap: 6px;
+}
+.admin-logout:hover { background: rgba(255,255,255,.2) }
+.admin-logout svg { width: 14px; height: 14px }
+
+/* ── Layout admin ── */
+.admin-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px }
+
+/* ── Tabs ── */
+.admin-tabs {
+  display: flex; gap: 4px; background: var(--w);
+  border-radius: var(--radl); padding: 6px;
+  border: 1px solid var(--gl); margin-bottom: 24px;
+  box-shadow: var(--sh); overflow-x: auto;
+}
+.admin-tab {
+  flex: 1; min-width: 100px; padding: 10px 16px; border-radius: 10px;
+  font-family: var(--fd); font-size: .82rem; font-weight: 600;
+  color: var(--gt); cursor: pointer; border: none; background: none;
+  transition: all var(--t); white-space: nowrap;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.admin-tab:hover { color: var(--a3); background: rgba(0,135,241,.06) }
+.admin-tab.active {
+  background: var(--a3); color: var(--w);
+  box-shadow: 0 3px 12px rgba(0,135,241,.3);
+}
+.admin-tab svg { width: 15px; height: 15px }
+
+/* ── Panel ── */
+.admin-panel { display: none }
+.admin-panel.active { display: block }
+
+/* ── Card ── */
+.admin-card {
+  background: var(--w); border-radius: var(--radl);
+  border: 1px solid var(--gl); padding: 28px 32px;
+  margin-bottom: 20px; box-shadow: var(--sh);
+}
+.admin-card-title {
+  font-size: .78rem; font-weight: 700; color: var(--a3);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+}
+.admin-card-title::before {
+  content: ''; width: 18px; height: 2px;
+  background: var(--a4); border-radius: 2px; display: inline-block;
+}
+
+/* ── Tabla admin ── */
+.admin-table-wrap { overflow-x: auto }
+.admin-table { width: 100%; border-collapse: collapse }
+.admin-table th {
+  font-size: .72rem; font-weight: 700; color: var(--gt);
+  text-transform: uppercase; letter-spacing: .07em;
+  padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--gl);
+  white-space: nowrap;
+}
+.admin-table td {
+  padding: 13px 14px; font-size: .85rem;
+  border-bottom: 1px solid var(--gb); vertical-align: middle;
+}
+.admin-table tr:last-child td { border-bottom: none }
+.admin-table tr:hover td { background: rgba(0,135,241,.03) }
+.admin-table-empty {
+  text-align: center; color: var(--gt); font-style: italic; padding: 40px 20px !important;
+}
+.admin-url-link { color: var(--a3); font-size: .82rem; font-weight: 600 }
+.admin-url-link:hover { text-decoration: underline }
+.admin-no-url { color: rgba(90,106,130,.38); font-style: italic; font-size: .8rem }
+
+/* ── Botones tabla ── */
+.admin-btn-del {
+  background: rgba(224,53,53,.08); border: 1px solid rgba(224,53,53,.2);
+  color: var(--r); font-family: var(--fd); font-size: .75rem; font-weight: 600;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all var(--t);
+}
+.admin-btn-del:hover { background: var(--r); color: var(--w) }
+.admin-btn-edit {
+  background: rgba(0,135,241,.08); border: 1px solid rgba(0,135,241,.2);
+  color: var(--a3); font-family: var(--fd); font-size: .75rem; font-weight: 600;
+  padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all var(--t);
+}
+.admin-btn-edit:hover { background: var(--a3); color: var(--w) }
+.admin-btn-save {
+  background: var(--a3); color: var(--w);
+  font-family: var(--fd); font-size: .85rem; font-weight: 700;
+  padding: 12px 24px; border-radius: var(--rad);
+  border: none; cursor: pointer; transition: all var(--t);
+  box-shadow: 0 4px 14px rgba(0,135,241,.3);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.admin-btn-save:hover { background: var(--a1); transform: translateY(-1px) }
+.admin-btn-save:disabled { opacity: .5; cursor: not-allowed; transform: none }
+
+/* ── Badge estado ── */
+.admin-badge {
+  display: inline-flex; padding: 2px 9px; border-radius: 50px;
+  font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+}
+.admin-badge-taller  { background: rgba(0,135,241,.1); color: var(--a3) }
+.admin-badge-oficial { background: rgba(0,34,71,.08);  color: var(--a1) }
+
+/* ── Input en admin (override base) ── */
+.admin-card input, .admin-card textarea, .admin-card select {
+  width: 100%; padding: 10px 13px; border-radius: var(--rad);
+  border: 1.5px solid var(--gl); font-family: var(--fd);
+  font-size: .87rem; color: var(--gd); outline: none; transition: border-color var(--t);
+}
+.admin-card input:focus, .admin-card textarea:focus, .admin-card select:focus {
+  border-color: var(--a3); box-shadow: 0 0 0 3px rgba(0,135,241,.1);
+}
+.admin-card textarea { resize: vertical; min-height: 80px }
+.admin-card select   { cursor: pointer; background: var(--w) }
+.admin-card label    { font-size: .75rem; font-weight: 700; color: var(--a1); letter-spacing: .02em; display: block; margin-bottom: 5px }
+.admin-card label span { color: var(--r); margin-left: 2px }
+.admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px }
+.admin-form-grid .span2 { grid-column: span 2 }
+.admin-hint { font-size: .7rem; color: var(--gt); margin-top: 3px }
+
+/* ── Stats admin ── */
+.admin-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px }
+.admin-stat {
+  background: var(--w); border-radius: var(--radl);
+  border: 1px solid var(--gl); padding: 20px 22px;
+  box-shadow: var(--sh); text-align: center;
+}
+.admin-stat-n { font-size: 1.8rem; font-weight: 800; color: var(--a3); font-family: var(--fd); line-height: 1 }
+.admin-stat-l { font-size: .74rem; color: var(--gt); margin-top: 4px }
+
+/* ── Responsive admin ── */
+@media (max-width: 768px) {
+  .admin-wrap { padding: 16px }
+  .admin-card { padding: 20px 18px }
+  .admin-tabs .admin-tab { font-size: .74rem; padding: 9px 12px; min-width: 80px }
+  .admin-stats { grid-template-columns: 1fr 1fr }
+  .admin-form-grid { grid-template-columns: 1fr }
+  .admin-form-grid .span2 { grid-column: span 1 }
+  .login-box { padding: 36px 24px }
+}
+@media (max-width: 480px) {
+  .admin-stats { grid-template-columns: 1fr 1fr }
+  .admin-header-subtitle { display: none }
+}

@@ -1,359 +1,509 @@
-/* ══════════════════════════════════════════════
-   CELIDER 08-01 — Gestión de Calendario
-   Code.gs — Google Apps Script
-   
-   INSTRUCCIONES DE CONFIGURACIÓN:
-   1. Ve a script.google.com y crea un nuevo proyecto
-   2. Pega este código en Code.gs
-   3. Ve a Archivo → Guardar
-   4. Haz clic en "Implementar" → "Nueva implementación"
-   5. Tipo: Aplicación web
-   6. Ejecutar como: Yo (tu cuenta)
-   7. Quién tiene acceso: Cualquier persona
-   8. Haz clic en "Implementar" y copia la URL
-   9. Pega esa URL en script.js del sitio web (variable APPS_SCRIPT_URL)
-══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════
+   CELIDER 08-01 — Google Apps Script Backend completo
+   Code.gs
 
-const SHEET_NAME = 'Eventos';
+   INSTRUCCIONES DE DESPLIEGUE:
+   ──────────────────────────────────────────────────────────────────
+   1. Ve a https://script.google.com y crea un nuevo proyecto.
+   2. Pega este código en el editor (reemplaza todo el contenido).
+   3. Guarda el proyecto (Ctrl+S).
+   4. PRIMERO: Ejecuta la función setup() manualmente:
+      - Haz clic en el menú desplegable junto a "Ejecutar"
+      - Selecciona "setup" y haz clic en "Ejecutar"
+      - Autoriza los permisos cuando se te solicite
+      - Esto crea el Google Sheets con todas las hojas y columnas
+   5. Para desplegar como API:
+      - Haz clic en "Implementar" → "Nueva implementación"
+      - Tipo: Aplicación web
+      - Ejecutar como: Yo (tu cuenta de Google)
+      - Quién tiene acceso: Cualquier persona (anónimos)
+      - Haz clic en "Implementar"
+      - Copia la URL generada (termina en /exec)
+   6. Pega la URL en js/config.js (variable APPS_SCRIPT_URL)
+   7. Actualiza ADMIN_KEY abajo con una clave segura propia.
 
-/* ── Punto de entrada principal ── */
+   ESTRUCTURA DEL GOOGLE SHEETS:
+   ──────────────────────────────────────────────────────────────────
+   Hoja: eventos      → id | fecha | nombre | descripcion | url
+   Hoja: documentos   → id | titulo | descripcion | tipo | enlace | fecha
+   Hoja: directiva    → id | cargo | nombre | foto_url | bio
+   Hoja: contactos    → id | nombre | email | mensaje | fecha
+   Hoja: registros    → id | nombre | centro | telefono | email | fecha
+   Hoja: contenido_web→ clave | valor | descripcion
+   Hoja: admin        → clave | hash | descripcion
+══════════════════════════════════════════════════════════════════ */
+
+/* ══ CONFIGURACIÓN — CAMBIAR ANTES DE DESPLEGAR ══ */
+const ADMIN_KEY         = 'celider2025admin';       // ⚠️ CAMBIA ESTO
+const SPREADSHEET_NAME  = 'CELIDER 08-01 — Base de datos';
+const SPREADSHEET_ID    = '';                       // Déjalo vacío para auto-crear
+
+/* ══ NOMBRES DE HOJAS ══ */
+const SHEETS = {
+  EVENTOS:    'eventos',
+  DOCUMENTOS: 'documentos',
+  DIRECTIVA:  'directiva',
+  CONTACTOS:  'contactos',
+  REGISTROS:  'registros',
+  CONTENIDO:  'contenido_web',
+  ADMIN:      'admin',
+};
+
+/* ══ COLUMNAS POR HOJA ══ */
+const HEADERS = {
+  eventos:      ['id', 'fecha', 'nombre', 'descripcion', 'url'],
+  documentos:   ['id', 'titulo', 'descripcion', 'tipo', 'enlace', 'fecha'],
+  directiva:    ['id', 'cargo', 'nombre', 'foto_url', 'bio'],
+  contactos:    ['id', 'nombre', 'email', 'mensaje', 'fecha'],
+  registros:    ['id', 'nombre', 'centro', 'telefono', 'email', 'fecha'],
+  contenido_web:['clave', 'valor', 'descripcion'],
+  admin:        ['clave', 'hash', 'descripcion'],
+};
+
+/* ════════════════════════════════════════════════════════════════
+   SETUP — Ejecutar una sola vez para inicializar el sistema
+════════════════════════════════════════════════════════════════ */
+
+/**
+ * Función principal de inicialización.
+ * Crea el Spreadsheet (o lo encuentra si ya existe) y
+ * configura todas las hojas con sus encabezados.
+ * ¡Ejecutar solo una vez!
+ */
+function setup() {
+  Logger.log('=== CELIDER 08-01: Iniciando configuración del sistema ===');
+  const ss = getOrCreateSpreadsheet_();
+  initDatabase(ss);
+  Logger.log('=== Configuración completada. ID del Spreadsheet: ' + ss.getId() + ' ===');
+  Logger.log('URL: ' + ss.getUrl());
+}
+
+/** Alias para compatibilidad */
+function initDatabase(ss) {
+  if (!ss) ss = getOrCreateSpreadsheet_();
+
+  // Crea o verifica cada hoja
+  Object.entries(HEADERS).forEach(([sheetName, headers]) => {
+    const sheet = getOrCreateSheet_(ss, sheetName, headers);
+    Logger.log('Hoja lista: ' + sheetName + ' (' + headers.length + ' columnas)');
+  });
+
+  // Inserta la clave de admin por defecto si no existe
+  const adminSheet = ss.getSheetByName(SHEETS.ADMIN);
+  if (adminSheet && adminSheet.getLastRow() <= 1) {
+    adminSheet.appendRow([ADMIN_KEY, '', 'Clave de administrador principal']);
+    Logger.log('Clave de admin insertada: ' + ADMIN_KEY);
+  }
+
+  // Inserta contenido web por defecto
+  const contenidoSheet = ss.getSheetByName(SHEETS.CONTENIDO);
+  if (contenidoSheet && contenidoSheet.getLastRow() <= 1) {
+    const defaults = [
+      ['hero_titulo',      'CELIDER 08-01',                              'Título principal del hero'],
+      ['hero_subtitulo',   'Club Escolar de Liderazgo',                  'Subtítulo del hero'],
+      ['quienes_intro',    'Formando líderes para nuestra comunidad',    'Título de la sección Quiénes Somos'],
+      ['instagram_handle', '@celider0801',                               'Handle de Instagram'],
+      ['whatsapp_numero',  '849-633-6491',                               'Número de WhatsApp'],
+    ];
+    defaults.forEach(row => contenidoSheet.appendRow(row));
+  }
+
+  Logger.log('Base de datos inicializada correctamente.');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ENTRY POINTS: doGet / doPost
+════════════════════════════════════════════════════════════════ */
+
 function doGet(e) {
-  // Endpoint JSON para el sitio web
-  if (e.parameter.action === 'getEvents') {
-    return getEventsAsJSON();
+  const action = e.parameter.action || '';
+
+  // Endpoints públicos
+  switch (action) {
+    case 'getEvents':     return getEventsAsJSON_();
+    case 'getDocumentos': return getDocumentosAsJSON_(e.parameter.tipo || '');
+    case 'getDirectiva':  return getDirectivaAsJSON_();
+    case 'getContenido':  return getContenidoAsJSON_();
+    case 'adminLogin':    return handleAdminLogin_(e.parameter.adminKey || '');
+    case 'adminGet':      return handleAdminGet_(e);
+    default:
+      // Panel admin (acceso via navegador sin parámetros)
+      return buildAdminRedirectHTML_();
   }
-  // Panel de administración
-  return HtmlService.createHtmlOutput(buildAdminHTML())
-    .setTitle('CELIDER 08-01 — Panel de Calendario')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-/* ── Devuelve los eventos como JSON (para el sitio web) ── */
-function getEventsAsJSON() {
-  const events = getEventsFromSheet();
-  return ContentService
-    .createTextOutput(JSON.stringify(events))
-    .setMimeType(ContentService.MimeType.JSON);
+function doPost(e) {
+  let payload = {};
+  try {
+    payload = JSON.parse(e.postData.contents);
+  } catch {
+    return jsonResponse_({ ok: false, error: 'JSON inválido' });
+  }
+
+  const action = payload.action || '';
+
+  switch (action) {
+    case 'registro':     return handleRegistro_(payload);
+    case 'contacto':     return handleContacto_(payload);
+    case 'adminAdd':     return handleAdminAdd_(payload);
+    case 'adminUpdate':  return handleAdminUpdate_(payload);
+    case 'adminDelete':  return handleAdminDelete_(payload);
+    default:
+      return jsonResponse_({ ok: false, error: 'Acción no reconocida: ' + action });
+  }
 }
 
-/* ── Lee todos los eventos de la hoja ── */
-function getEventsFromSheet() {
-  const sheet = getOrCreateSheet();
-  const data  = sheet.getDataRange().getValues();
-  const events = [];
+/* ════════════════════════════════════════════════════════════════
+   ENDPOINTS PÚBLICOS — Lectura de datos
+════════════════════════════════════════════════════════════════ */
 
-  for (let i = 1; i < data.length; i++) {
-    const row = data[i];
-    if (!row[0]) continue; // Omite filas vacías
+function getEventsAsJSON_() {
+  try {
+    const ss     = getOrCreateSpreadsheet_();
+    const sheet  = ss.getSheetByName(SHEETS.EVENTOS);
+    if (!sheet) return jsonResponse_([]);
+    const events = sheetToObjects_(sheet);
+    return jsonResponse_(events);
+  } catch (err) {
+    return jsonResponse_({ error: err.message });
+  }
+}
 
-    let dateStr = '';
-    if (row[0] instanceof Date) {
-      // Formatea como YYYY-MM-DD
-      const d = row[0];
-      dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    } else {
-      dateStr = String(row[0]);
+function getDocumentosAsJSON_(tipoFilter) {
+  try {
+    const ss    = getOrCreateSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEETS.DOCUMENTOS);
+    if (!sheet) return jsonResponse_([]);
+    let docs = sheetToObjects_(sheet);
+    if (tipoFilter) {
+      docs = docs.filter(d => (d.tipo || '').toLowerCase() === tipoFilter.toLowerCase());
     }
+    return jsonResponse_(docs);
+  } catch (err) {
+    return jsonResponse_({ error: err.message });
+  }
+}
 
-    events.push({
-      id:   i,
-      date: dateStr,
-      name: String(row[1] || '').trim(),
-      url:  String(row[2] || '').trim()
+function getDirectivaAsJSON_() {
+  try {
+    const ss    = getOrCreateSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEETS.DIRECTIVA);
+    if (!sheet) return jsonResponse_([]);
+    return jsonResponse_(sheetToObjects_(sheet));
+  } catch (err) {
+    return jsonResponse_({ error: err.message });
+  }
+}
+
+function getContenidoAsJSON_() {
+  try {
+    const ss    = getOrCreateSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEETS.CONTENIDO);
+    if (!sheet) return jsonResponse_({});
+    const rows  = sheet.getDataRange().getValues();
+    const obj   = {};
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0]) obj[rows[i][0]] = rows[i][1];
+    }
+    return jsonResponse_(obj);
+  } catch (err) {
+    return jsonResponse_({ error: err.message });
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ENDPOINTS PÚBLICOS — Escritura (formularios)
+════════════════════════════════════════════════════════════════ */
+
+function handleRegistro_(payload) {
+  try {
+    const { nombre, centro, telefono, email } = payload;
+    if (!nombre || !email) return jsonResponse_({ ok: false, error: 'Campos obligatorios faltantes.' });
+
+    const ss    = getOrCreateSpreadsheet_();
+    const sheet = getOrCreateSheet_(ss, SHEETS.REGISTROS, HEADERS.registros);
+    const id    = generateId_();
+    const fecha = new Date().toISOString().split('T')[0];
+
+    sheet.appendRow([id, nombre.trim(), (centro || '').trim(), (telefono || '').trim(), email.trim(), fecha]);
+    Logger.log('Registro: ' + nombre + ' / ' + email);
+    return jsonResponse_({ ok: true, id });
+  } catch (err) {
+    Logger.log('Error en registro: ' + err.message);
+    return jsonResponse_({ ok: false, error: err.message });
+  }
+}
+
+function handleContacto_(payload) {
+  try {
+    const { nombre, email, mensaje } = payload;
+    if (!nombre || !email || !mensaje) return jsonResponse_({ ok: false, error: 'Campos obligatorios faltantes.' });
+
+    const ss    = getOrCreateSpreadsheet_();
+    const sheet = getOrCreateSheet_(ss, SHEETS.CONTACTOS, HEADERS.contactos);
+    const id    = generateId_();
+    const fecha = new Date().toISOString().split('T')[0];
+
+    sheet.appendRow([id, nombre.trim(), email.trim(), mensaje.trim(), fecha]);
+    Logger.log('Contacto: ' + nombre + ' / ' + email);
+    return jsonResponse_({ ok: true, id });
+  } catch (err) {
+    Logger.log('Error en contacto: ' + err.message);
+    return jsonResponse_({ ok: false, error: err.message });
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ENDPOINTS ADMIN — Requieren clave
+════════════════════════════════════════════════════════════════ */
+
+function handleAdminLogin_(key) {
+  const ok = validateAdminKey_(key);
+  return jsonResponse_({ ok, message: ok ? 'Autenticado' : 'Clave incorrecta' });
+}
+
+function handleAdminGet_(e) {
+  const key   = e.parameter.adminKey || '';
+  const sheet = e.parameter.sheet   || '';
+
+  if (!validateAdminKey_(key)) return jsonResponse_({ error: 'No autorizado', ok: false });
+
+  try {
+    const ss = getOrCreateSpreadsheet_();
+    const sh = ss.getSheetByName(sheet);
+    if (!sh) return jsonResponse_({ rows: [], ok: true });
+    const rows = sheetToObjects_(sh);
+    return jsonResponse_({ rows, ok: true });
+  } catch (err) {
+    return jsonResponse_({ error: err.message, ok: false });
+  }
+}
+
+function handleAdminAdd_(payload) {
+  const { adminKey, sheet, record } = payload;
+  if (!validateAdminKey_(adminKey)) return jsonResponse_({ ok: false, error: 'No autorizado' });
+  if (!sheet || !record)            return jsonResponse_({ ok: false, error: 'Parámetros faltantes' });
+
+  try {
+    const ss      = getOrCreateSpreadsheet_();
+    const headers = HEADERS[sheet] || Object.keys(record);
+    const sh      = getOrCreateSheet_(ss, sheet, headers);
+    const id      = generateId_();
+
+    // Construye la fila en el orden de los headers
+    const row = headers.map(h => {
+      if (h === 'id') return id;
+      return record[h] !== undefined ? String(record[h]).trim() : '';
     });
-  }
 
-  return events;
+    sh.appendRow(row);
+    return jsonResponse_({ ok: true, id });
+  } catch (err) {
+    return jsonResponse_({ ok: false, error: err.message });
+  }
 }
 
-/* ── Agrega un evento nuevo ── */
-function agregarEvento(fecha, nombre, url) {
+function handleAdminUpdate_(payload) {
+  const { adminKey, sheet, id, record } = payload;
+  if (!validateAdminKey_(adminKey)) return jsonResponse_({ ok: false, error: 'No autorizado' });
+
   try {
-    const sheet = getOrCreateSheet();
-    sheet.appendRow([new Date(fecha + 'T12:00:00'), nombre.trim(), (url || '').trim()]);
-    return { ok: true };
-  } catch(err) {
-    return { ok: false, error: err.message };
+    const ss = getOrCreateSpreadsheet_();
+    const sh = ss.getSheetByName(sheet);
+    if (!sh) return jsonResponse_({ ok: false, error: 'Hoja no encontrada' });
+
+    const data  = sh.getDataRange().getValues();
+    const hdrs  = data[0];
+    const idIdx = hdrs.indexOf('id');
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idIdx]) === String(id)) {
+        // Actualiza las columnas del record
+        Object.entries(record).forEach(([key, val]) => {
+          const colIdx = hdrs.indexOf(key);
+          if (colIdx >= 0) sh.getRange(i + 1, colIdx + 1).setValue(val);
+        });
+        return jsonResponse_({ ok: true });
+      }
+    }
+    return jsonResponse_({ ok: false, error: 'Registro no encontrado' });
+  } catch (err) {
+    return jsonResponse_({ ok: false, error: err.message });
   }
 }
 
-/* ── Elimina un evento por número de fila (1-based en hoja, +1 por cabecera) ── */
-function eliminarEvento(rowId) {
+function handleAdminDelete_(payload) {
+  const { adminKey, sheet, id } = payload;
+  if (!validateAdminKey_(adminKey)) return jsonResponse_({ ok: false, error: 'No autorizado' });
+
   try {
-    const sheet = getOrCreateSheet();
-    sheet.deleteRow(rowId + 1); // rowId es el índice de datos (1-based), +1 por encabezado
-    return { ok: true };
-  } catch(err) {
-    return { ok: false, error: err.message };
+    const ss = getOrCreateSpreadsheet_();
+    const sh = ss.getSheetByName(sheet);
+    if (!sh) return jsonResponse_({ ok: false, error: 'Hoja no encontrada' });
+
+    const data  = sh.getDataRange().getValues();
+    const idIdx = data[0].indexOf('id');
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idIdx]) === String(id) || i === Number(id)) {
+        sh.deleteRow(i + 1);
+        return jsonResponse_({ ok: true });
+      }
+    }
+    return jsonResponse_({ ok: false, error: 'Registro no encontrado' });
+  } catch (err) {
+    return jsonResponse_({ ok: false, error: err.message });
   }
 }
 
-/* ── Obtiene o crea la hoja de eventos ── */
-function getOrCreateSheet() {
-  const ss    = SpreadsheetApp.getActiveSpreadsheet();
-  let   sheet = ss.getSheetByName(SHEET_NAME);
+/* ════════════════════════════════════════════════════════════════
+   UTILIDADES INTERNAS
+════════════════════════════════════════════════════════════════ */
+
+/** Obtiene o crea el Spreadsheet principal */
+function getOrCreateSpreadsheet_() {
+  // Si hay un ID fijo configurado, úsalo
+  if (SPREADSHEET_ID) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  // Intenta encontrarlo en el Drive por nombre
+  const files = DriveApp.getFilesByName(SPREADSHEET_NAME);
+  if (files.hasNext()) {
+    return SpreadsheetApp.open(files.next());
+  }
+  // Crea uno nuevo
+  const ss = SpreadsheetApp.create(SPREADSHEET_NAME);
+  Logger.log('Spreadsheet creado: ' + ss.getUrl());
+  return ss;
+}
+
+/** Obtiene o crea una hoja con los headers dados */
+function getOrCreateSheet_(ss, sheetName, headers) {
+  let sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    const header = sheet.getRange(1, 1, 1, 3);
-    header.setValues([['Fecha', 'Nombre del Evento', 'URL (botón Acceder)']]);
-    header.setFontWeight('bold');
-    header.setBackground('#002247');
-    header.setFontColor('#ffffff');
-    sheet.setColumnWidth(1, 120);
-    sheet.setColumnWidth(2, 280);
-    sheet.setColumnWidth(3, 320);
+    sheet = ss.insertSheet(sheetName);
+  }
+
+  // Si la hoja está vacía, agrega los headers
+  if (sheet.getLastRow() === 0) {
+    const headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setValues([headers]);
+    headerRange.setFontWeight('bold');
+    headerRange.setBackground('#002247');
+    headerRange.setFontColor('#ffffff');
     sheet.setFrozenRows(1);
+
+    // Ajusta ancho de columnas
+    headers.forEach((h, i) => {
+      const width = h === 'descripcion' || h === 'mensaje' || h === 'enlace' ? 280 :
+                    h === 'nombre' || h === 'titulo' || h === 'cargo'         ? 220 :
+                    h === 'fecha'                                              ? 120 : 150;
+      sheet.setColumnWidth(i + 1, width);
+    });
   }
 
   return sheet;
 }
 
-/* ══════════════════════════════════════════════
-   HTML DEL PANEL DE ADMINISTRACIÓN
-══════════════════════════════════════════════ */
-function buildAdminHTML() {
-  const events = getEventsFromSheet();
+/** Convierte los datos de una hoja en array de objetos */
+function sheetToObjects_(sheet) {
+  if (sheet.getLastRow() <= 1) return [];
+  const data    = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const result  = [];
 
-  let rows = '';
-  if (events.length === 0) {
-    rows = `<tr><td colspan="4" class="empty">No hay eventos registrados.</td></tr>`;
-  } else {
-    events.forEach(ev => {
-      const urlCell = ev.url
-        ? `<a href="${ev.url}" target="_blank" class="url-link">Ver enlace</a>`
-        : `<span class="no-url">Sin enlace</span>`;
-      rows += `
-        <tr>
-          <td>${ev.date}</td>
-          <td>${ev.name}</td>
-          <td>${urlCell}</td>
-          <td>
-            <button class="btn-del" onclick="confirmarEliminar(${ev.id}, '${ev.name.replace(/'/g,"\\'")}')">
-              Eliminar
-            </button>
-          </td>
-        </tr>`;
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[0]) continue; // Omite filas vacías
+    const obj = { _row: i + 1 };
+    headers.forEach((h, j) => {
+      const val = row[j];
+      // Formatea fechas como YYYY-MM-DD
+      if (val instanceof Date) {
+        obj[h] = Utilities.formatDate(val, 'America/Santo_Domingo', 'yyyy-MM-dd');
+      } else {
+        obj[h] = String(val === null || val === undefined ? '' : val).trim();
+      }
     });
+    result.push(obj);
   }
 
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>CELIDER 08-01 — Calendario</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <style>
-    :root{
-      --a1:#002247;--a2:#005286;--a3:#0087F1;--a4:#00CBFF;
-      --w:#fff;--gb:#F4F7FB;--gl:#DDE3ED;--gt:#5A6A82;
-      --r:#E03535;--green:#25D366;
+  return result;
+}
+
+/** Valida la clave de administrador */
+function validateAdminKey_(key) {
+  if (!key) return false;
+  if (key === ADMIN_KEY) return true;
+
+  // También verifica contra la hoja admin
+  try {
+    const ss    = getOrCreateSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEETS.ADMIN);
+    if (!sheet) return false;
+    const data  = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === key) return true;
     }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Sora',sans-serif;background:var(--gb);color:#2C3A50;min-height:100vh}
+  } catch { /* silencioso */ }
 
-    /* Header */
-    .hd{
-      background:linear-gradient(135deg,var(--a1),var(--a2));
-      color:#fff;padding:22px 32px;
-      display:flex;align-items:center;gap:16px;
+  return false;
+}
+
+/** Genera un ID único */
+function generateId_() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+/** Retorna una respuesta JSON con headers CORS */
+function jsonResponse_(data) {
+  const output = ContentService.createTextOutput(JSON.stringify(data));
+  output.setMimeType(ContentService.MimeType.JSON);
+  return output;
+}
+
+/** HTML de redirección al panel admin del frontend */
+function buildAdminRedirectHTML_() {
+  return HtmlService.createHtmlOutput(`
+    <!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>CELIDER 08-01</title>
+    <meta http-equiv="refresh" content="0;url=https://tu-sitio.github.io/admin.html">
+    </head>
+    <body style="font-family:sans-serif;padding:40px;color:#002247">
+      <p>Redirigiendo al panel de administración...</p>
+      <p><a href="https://tu-sitio.github.io/admin.html">Haz clic aquí si no eres redirigido</a></p>
+    </body></html>
+  `).setTitle('CELIDER 08-01');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FUNCIONES ADICIONALES DE UTILIDAD PARA EL PANEL ADMIN
+   (Estas se llaman desde google.script.run en el panel embebido,
+    pero también están disponibles para uso interno)
+════════════════════════════════════════════════════════════════ */
+
+/** Limpia filas vacías de todas las hojas */
+function cleanEmptyRows() {
+  const ss = getOrCreateSpreadsheet_();
+  Object.values(SHEETS).forEach(sheetName => {
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet || sheet.getLastRow() <= 1) return;
+    const data = sheet.getDataRange().getValues();
+    for (let i = data.length - 1; i >= 1; i--) {
+      if (data[i].every(cell => !cell)) sheet.deleteRow(i + 1);
     }
-    .hd-dot{width:10px;height:10px;border-radius:50%;background:var(--a4);animation:pulse 2s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-    .hd h1{font-size:1.1rem;font-weight:700}
-    .hd p{font-size:.75rem;opacity:.6;margin-top:2px}
+  });
+  Logger.log('Filas vacías eliminadas.');
+}
 
-    /* Layout */
-    .wrap{max-width:860px;margin:32px auto;padding:0 20px}
-
-    /* Card */
-    .card{background:var(--w);border-radius:14px;border:1px solid var(--gl);padding:28px 32px;margin-bottom:24px;box-shadow:0 2px 16px rgba(0,34,71,.07)}
-    .card-title{font-size:.75rem;font-weight:700;color:var(--a3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:18px;display:flex;align-items:center;gap:8px}
-    .card-title::before{content:'';width:18px;height:2px;background:var(--a4);border-radius:2px;display:inline-block}
-
-    /* Formulario */
-    .fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .ff{display:flex;flex-direction:column;gap:6px}
-    .ff.full{grid-column:span 2}
-    label{font-size:.75rem;font-weight:700;color:var(--a1);letter-spacing:.02em}
-    label span{color:var(--r);margin-left:2px}
-    input[type=text],input[type=date],input[type=url]{
-      width:100%;padding:10px 13px;border-radius:8px;
-      border:1.5px solid var(--gl);font-family:'Sora',sans-serif;
-      font-size:.87rem;color:#2C3A50;outline:none;transition:border-color .2s;
-    }
-    input:focus{border-color:var(--a3);box-shadow:0 0 0 3px rgba(0,135,241,.1)}
-    .hint{font-size:.7rem;color:var(--gt);margin-top:2px}
-    .btn-add{
-      margin-top:8px;width:100%;padding:13px;border-radius:8px;
-      background:var(--a3);color:#fff;font-family:'Sora',sans-serif;
-      font-size:.87rem;font-weight:700;border:none;cursor:pointer;
-      transition:all .2s;box-shadow:0 4px 14px rgba(0,135,241,.3);
-    }
-    .btn-add:hover{background:var(--a1);transform:translateY(-1px)}
-    .btn-add:disabled{opacity:.5;cursor:not-allowed;transform:none}
-
-    /* Tabla */
-    table{width:100%;border-collapse:collapse}
-    th{font-size:.72rem;font-weight:700;color:var(--gt);text-transform:uppercase;letter-spacing:.07em;padding:10px 14px;text-align:left;border-bottom:2px solid var(--gl)}
-    td{padding:13px 14px;font-size:.85rem;border-bottom:1px solid var(--gb);vertical-align:middle}
-    tr:last-child td{border-bottom:none}
-    tr:hover td{background:rgba(0,135,241,.03)}
-    .empty{text-align:center;color:var(--gt);font-style:italic;padding:32px}
-    .url-link{color:var(--a3);font-size:.8rem;font-weight:600;text-decoration:none}
-    .url-link:hover{text-decoration:underline}
-    .no-url{font-size:.78rem;color:rgba(90,106,130,.45);font-style:italic}
-    .btn-del{
-      background:rgba(224,53,53,.1);border:1px solid rgba(224,53,53,.25);
-      color:var(--r);font-family:'Sora',sans-serif;font-size:.76rem;
-      font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;
-      transition:all .2s;
-    }
-    .btn-del:hover{background:var(--r);color:#fff}
-
-    /* Toast */
-    .toast{
-      position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);
-      background:var(--a1);color:#fff;padding:12px 24px;border-radius:10px;
-      font-size:.85rem;font-weight:600;opacity:0;transition:all .35s;z-index:999;
-      box-shadow:0 8px 32px rgba(0,34,71,.25);pointer-events:none;
-    }
-    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-    .toast.err{background:var(--r)}
-
-    /* Spinner */
-    .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    @media(max-width:600px){
-      .fg{grid-template-columns:1fr}
-      .ff.full{grid-column:span 1}
-      .hd{padding:16px 20px}
-      .card{padding:20px}
-      .wrap{padding:0 12px}
-    }
-  </style>
-</head>
-<body>
-
-<div class="hd">
-  <span class="hd-dot"></span>
-  <div>
-    <h1>CELIDER 08-01 — Panel de Calendario</h1>
-    <p>Gestión de eventos y actividades institucionales</p>
-  </div>
-</div>
-
-<div class="wrap">
-
-  <!-- FORMULARIO -->
-  <div class="card">
-    <div class="card-title">Agregar nuevo evento</div>
-    <div class="fg">
-      <div class="ff">
-        <label for="fFecha">Fecha <span>*</span></label>
-        <input type="date" id="fFecha" required/>
-      </div>
-      <div class="ff">
-        <label for="fNombre">Nombre del evento <span>*</span></label>
-        <input type="text" id="fNombre" placeholder="Ej. Taller de liderazgo" required/>
-      </div>
-      <div class="ff full">
-        <label for="fUrl">URL del botón "Acceder" <span style="color:var(--gt);font-weight:400">(opcional)</span></label>
-        <input type="url" id="fUrl" placeholder="https://meet.google.com/... o cualquier enlace"/>
-        <span class="hint">Si se deja vacío, el botón no aparecerá en el sitio web.</span>
-      </div>
-    </div>
-    <button class="btn-add" id="btnAgregar" onclick="agregarEvento()">
-      + Agregar evento al calendario
-    </button>
-  </div>
-
-  <!-- TABLA DE EVENTOS -->
-  <div class="card">
-    <div class="card-title">Eventos registrados (${events.length})</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Nombre del evento</th>
-          <th>Enlace</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="tablaBody">
-        ${rows}
-      </tbody>
-    </table>
-  </div>
-
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-  function showToast(msg, err) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast show' + (err ? ' err' : '');
-    setTimeout(() => t.className = 'toast', 3200);
-  }
-
-  function setLoading(on) {
-    const btn = document.getElementById('btnAgregar');
-    btn.disabled = on;
-    btn.innerHTML = on
-      ? '<span class="spin"></span>Guardando...'
-      : '+ Agregar evento al calendario';
-  }
-
-  function agregarEvento() {
-    const fecha  = document.getElementById('fFecha').value.trim();
-    const nombre = document.getElementById('fNombre').value.trim();
-    const url    = document.getElementById('fUrl').value.trim();
-
-    if (!fecha)  { showToast('⚠️ La fecha es obligatoria.', true); return; }
-    if (!nombre) { showToast('⚠️ El nombre del evento es obligatorio.', true); return; }
-
-    setLoading(true);
-    google.script.run
-      .withSuccessHandler(res => {
-        setLoading(false);
-        if (res.ok) {
-          showToast('✅ Evento agregado correctamente.');
-          document.getElementById('fFecha').value  = '';
-          document.getElementById('fNombre').value = '';
-          document.getElementById('fUrl').value    = '';
-          setTimeout(() => location.reload(), 1200);
-        } else {
-          showToast('❌ Error: ' + res.error, true);
-        }
-      })
-      .withFailureHandler(err => {
-        setLoading(false);
-        showToast('❌ Error inesperado: ' + err.message, true);
-      })
-      .agregarEvento(fecha, nombre, url);
-  }
-
-  function confirmarEliminar(rowId, nombre) {
-    if (!confirm('¿Eliminar el evento "' + nombre + '"?')) return;
-    google.script.run
-      .withSuccessHandler(res => {
-        if (res.ok) {
-          showToast('🗑️ Evento eliminado.');
-          setTimeout(() => location.reload(), 1000);
-        } else {
-          showToast('❌ Error al eliminar.', true);
-        }
-      })
-      .withFailureHandler(err => {
-        showToast('❌ Error: ' + err.message, true);
-      })
-      .eliminarEvento(rowId);
-  }
-</script>
-</body>
-</html>`;
+/** Exporta estadísticas básicas */
+function getStats() {
+  const ss = getOrCreateSpreadsheet_();
+  const stats = {};
+  Object.entries(SHEETS).forEach(([key, sheetName]) => {
+    const sheet = ss.getSheetByName(sheetName);
+    stats[sheetName] = sheet ? Math.max(0, sheet.getLastRow() - 1) : 0;
+  });
+  return stats;
 }

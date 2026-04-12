@@ -1,0 +1,98 @@
+/* ══════════════════════════════════════════════
+   CELIDER 08-01 — Animaciones y transiciones
+   css/animations.css
+══════════════════════════════════════════════ */
+
+/* ── Keyframes globales ── */
+@keyframes blobDrift {
+  0%   { transform: translate(0,     0)     scale(1)    }
+  25%  { transform: translate(24px, -18px)  scale(1.04) }
+  50%  { transform: translate(-16px, 22px)  scale(.97)  }
+  75%  { transform: translate(18px,  8px)   scale(1.02) }
+  100% { transform: translate(0,     0)     scale(1)    }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1;  transform: scale(1)    }
+  50%       { opacity: .5; transform: scale(.75)  }
+}
+@keyframes down {
+  0%, 100% { opacity: 1  }
+  50%       { opacity: .3 }
+}
+@keyframes heroGlow {
+  0%   { opacity: 1   }
+  100% { opacity: .45 }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px) }
+  to   { opacity: 1; transform: translateY(0)    }
+}
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-24px) }
+  to   { opacity: 1; transform: translateX(0)     }
+}
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(24px) }
+  to   { opacity: 1; transform: translateX(0)    }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(.92) }
+  to   { opacity: 1; transform: scale(1)   }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center }
+  100% { background-position:  200% center }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(12px) }
+  to   { opacity: 1; transform: translateY(0)    }
+}
+
+/* ── Animaciones de entrada con scroll ── */
+.an {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.an.v { opacity: 1; transform: translateY(0) }
+
+/* Variantes de dirección */
+.an-left  { opacity: 0; transform: translateX(-26px); transition: opacity .6s ease, transform .6s ease }
+.an-right { opacity: 0; transform: translateX(26px);  transition: opacity .6s ease, transform .6s ease }
+.an-scale { opacity: 0; transform: scale(.93);         transition: opacity .6s ease, transform .6s ease }
+.an-left.v, .an-right.v, .an-scale.v { opacity: 1; transform: none }
+
+/* Delays */
+.d1 { transition-delay: .1s }
+.d2 { transition-delay: .2s }
+.d3 { transition-delay: .3s }
+.d4 { transition-delay: .4s }
+.d5 { transition-delay: .5s }
+.d6 { transition-delay: .6s }
+
+/* ── Hover card lift ── */
+.card-lift { transition: transform var(--t), box-shadow var(--t) }
+.card-lift:hover { transform: translateY(-4px); box-shadow: var(--shh) }
+
+/* ── Loading skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--gl) 25%, #e8edf5 50%, var(--gl) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--rad);
+}
+
+/* ── Transition de filtro ── */
+.filter-btn {
+  padding: 7px 18px; border-radius: 50px;
+  font-family: var(--fd); font-size: .78rem; font-weight: 600;
+  border: 1.5px solid var(--gl); color: var(--gt);
+  background: var(--w); cursor: pointer;
+  transition: all var(--t);
+}
+.filter-btn:hover  { border-color: var(--a3); color: var(--a3) }
+.filter-btn.active {
+  background: var(--a3); color: var(--w);
+  border-color: var(--a3);
+  box-shadow: 0 3px 12px rgba(0,135,241,.3);
+}
