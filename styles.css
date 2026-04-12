@@ -50,7 +50,7 @@ button { cursor:pointer; border:none; background:none; font-family:inherit }
 .nav-in { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:var(--mx); margin:0 auto; padding:0 24px }
 .logo { display:flex; align-items:center; gap:12px }
 
-/* Logo: img/logo.png */
+/* Logo: logo.png */
 .logo-img-wrap {
   width:42px; height:42px;
   border-radius:8px;
@@ -94,7 +94,7 @@ button { cursor:pointer; border:none; background:none; font-family:inherit }
       rgba(0,22,55,.83)   0%,
       rgba(0,58,110,.74)  45%,
       rgba(0,105,200,.60) 100%),
-    url('img/sajoma.png') center / cover no-repeat;
+    url('sajoma.png') center / cover no-repeat;
   display:flex; align-items:center; justify-content:center; overflow:hidden;
 }
 /* Halos de luz animados encima de la foto */
