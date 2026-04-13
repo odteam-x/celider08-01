@@ -3,12 +3,6 @@
    script.js
 ══════════════════════════════════════════════ */
 
-/* ════════════════════════════════════════════
-   ⚙️  CONFIGURACIÓN — pega aquí la URL de tu
-   implementación de Google Apps Script.
-   Debe terminar en /exec
-   Ejemplo: https://script.google.com/macros/s/AKfy.../exec
-════════════════════════════════════════════ */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGik1LqWl9av1p8AZDLU70YER-4pmap9dwNM6Fy4moXQziZeik8rIu0dJkAIzDc_4/exec';
 
 /* ── Hamburger menu ── */
@@ -56,6 +50,114 @@ const animObs = new IntersectionObserver(entries => {
 }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
 
 document.querySelectorAll('.an').forEach(el => animObs.observe(el));
+
+/* ══════════════════════════════════════════════
+   HERO — Texto ciclante de competencias
+══════════════════════════════════════════════ */
+(function initHeroCycle() {
+  const el = document.getElementById('heroCycle');
+  if (!el) return;
+
+  const words = [
+    'Liderazgo',
+    'Oratoria',
+    'Debate',
+    'Diplomacia',
+    'Investigación',
+    'Negociación',
+    'Redacción',
+    'Pensamiento Crítico',
+    'Ciudadanía'
+  ];
+
+  let idx = 0;
+
+  // Mostrar la primera palabra
+  el.textContent = words[0];
+  el.classList.add('visible');
+
+  setInterval(() => {
+    // Fade out
+    el.classList.remove('visible');
+
+    setTimeout(() => {
+      idx = (idx + 1) % words.length;
+      el.textContent = words[idx];
+      // Fade in
+      el.classList.add('visible');
+    }, 380);
+  }, 2600);
+})();
+
+/* ══════════════════════════════════════════════
+   STATS — Contadores animados
+══════════════════════════════════════════════ */
+(function initCounters() {
+  const counters = document.querySelectorAll('.stat-n[data-target]');
+  if (!counters.length) return;
+
+  const counterObs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+
+      const el     = entry.target;
+      const target = parseInt(el.dataset.target, 10);
+      const isYear = target > 1000;
+
+      // Para años: cuenta desde target-20; para números pequeños: desde 0
+      let current  = isYear ? target - 20 : 0;
+      const duration = 1400; // ms
+      const steps    = 60;
+      const increment = (target - current) / steps;
+      let tick = 0;
+
+      const timer = setInterval(() => {
+        tick++;
+        current += increment;
+
+        if (tick >= steps || Math.round(current) >= target) {
+          el.textContent = target;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.round(current);
+        }
+      }, duration / steps);
+
+      counterObs.unobserve(el);
+    });
+  }, { threshold: 0.6 });
+
+  counters.forEach(c => counterObs.observe(c));
+})();
+
+/* ══════════════════════════════════════════════
+   HABILIDADES — Barras de progreso animadas
+══════════════════════════════════════════════ */
+(function initSkillBars() {
+  const cards = document.querySelectorAll('.hab[data-level]');
+  if (!cards.length) return;
+
+  const barObs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+
+      const card  = entry.target;
+      const level = card.dataset.level;
+      const fill  = card.querySelector('.hab-bar-fill');
+
+      if (fill) {
+        // Pequeño delay para que coincida con la animación de entrada de la tarjeta
+        setTimeout(() => {
+          fill.style.width = level + '%';
+        }, 200);
+      }
+
+      barObs.unobserve(card);
+    });
+  }, { threshold: 0.3 });
+
+  cards.forEach(c => barObs.observe(c));
+})();
 
 /* ── Form: Registro ── */
 document.getElementById('freg').addEventListener('submit', function (e) {
@@ -132,7 +234,6 @@ function openModal(dateLabel, events) {
     item.appendChild(dot);
     item.appendChild(name);
 
-    // Botón "Acceder" solo si hay URL
     if (ev.url) {
       const btn = document.createElement('a');
       btn.href      = ev.url;
@@ -166,14 +267,11 @@ const MESES = [
 
 const DIAS_SEMANA = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 
-// Estado del calendario
 let calYear   = new Date().getFullYear();
 let calMonth  = new Date().getMonth();
-let calEvents = []; // Se cargará desde Apps Script
+let calEvents = [];
 
-/* ── Carga de eventos desde Google Apps Script ── */
 async function loadEvents() {
-  // Si no se configuró la URL, retorna vacío silenciosamente
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('PEGA-TU-URL-AQUI')) {
     renderCalendar(calYear, calMonth, []);
     return;
@@ -191,15 +289,13 @@ async function loadEvents() {
   renderCalendar(calYear, calMonth, calEvents);
 }
 
-/* ── Filtra los eventos para un mes/año específico ── */
 function getEventsForMonth(year, month, events) {
   return events.filter(ev => {
     const [y, m] = ev.date.split('-').map(Number);
-    return y === year && m === month + 1; // month es 0-based
+    return y === year && m === month + 1;
   });
 }
 
-/* ── Renderiza el calendario ── */
 function renderCalendar(year, month, events = []) {
   const label    = document.getElementById('cal-month-label');
   const grid     = document.getElementById('cal-days');
@@ -214,7 +310,6 @@ function renderCalendar(year, month, events = []) {
   const daysInPrev   = new Date(year, month, 0).getDate();
   const monthEvents  = getEventsForMonth(year, month, events);
 
-  // Celdas del mes anterior
   for (let i = firstDay - 1; i >= 0; i--) {
     const cell = document.createElement('div');
     cell.className   = 'cal-day other-month';
@@ -222,14 +317,12 @@ function renderCalendar(year, month, events = []) {
     grid.appendChild(cell);
   }
 
-  // Días del mes actual
   for (let d = 1; d <= daysInMonth; d++) {
     const cell      = document.createElement('div');
     const dayOfWeek = new Date(year, month, d).getDay();
     const isToday   = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-    // Eventos de este día
     const dayEvents = monthEvents.filter(ev => {
       const day = parseInt(ev.date.split('-')[2], 10);
       return day === d;
@@ -241,12 +334,10 @@ function renderCalendar(year, month, events = []) {
       + (isWeekend ? ' weekend'   : '')
       + (hasEvent  ? ' has-event' : '');
 
-    // Número del día
     const numSpan = document.createElement('span');
     numSpan.textContent = d;
     cell.appendChild(numSpan);
 
-    // Puntos de evento (máx. 3 visibles)
     if (hasEvent) {
       const dots = document.createElement('div');
       dots.className = 'ev-dots';
@@ -258,7 +349,6 @@ function renderCalendar(year, month, events = []) {
       }
       cell.appendChild(dots);
 
-      // Click para abrir modal
       const dateLabel = `${DIAS_SEMANA[dayOfWeek].charAt(0).toUpperCase() + DIAS_SEMANA[dayOfWeek].slice(1)} ${d} de ${MESES[month]} de ${year}`;
       cell.addEventListener('click', () => openModal(dateLabel, dayEvents));
       cell.style.cursor = 'pointer';
@@ -268,7 +358,6 @@ function renderCalendar(year, month, events = []) {
     grid.appendChild(cell);
   }
 
-  // Celdas del mes siguiente
   const totalCells = grid.children.length;
   const remainder  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
   for (let i = 1; i <= remainder; i++) {
@@ -278,7 +367,6 @@ function renderCalendar(year, month, events = []) {
     grid.appendChild(cell);
   }
 
-  // Actualizar leyenda
   if (monthEvents.length === 0) {
     noEvents.textContent = 'No hay actividades programadas para este mes.';
   } else {
@@ -286,7 +374,6 @@ function renderCalendar(year, month, events = []) {
   }
   noEvents.style.display = 'block';
 
-  // Actualizar leyenda de puntos
   updateLegend(monthEvents.length > 0);
 }
 
@@ -294,7 +381,6 @@ function updateLegend(hasEvents) {
   const legend = document.querySelector('.cal-legend');
   if (!legend) return;
 
-  // Elimina ítem de evento previo si existe
   const prev = legend.querySelector('.cal-legend-item.ev-item');
   if (prev) prev.remove();
 
@@ -306,7 +392,6 @@ function updateLegend(hasEvents) {
   }
 }
 
-/* ── Botones de navegación ── */
 document.getElementById('cal-prev').addEventListener('click', () => {
   calMonth--;
   if (calMonth < 0) { calMonth = 11; calYear--; }
@@ -319,5 +404,4 @@ document.getElementById('cal-next').addEventListener('click', () => {
   renderCalendar(calYear, calMonth, calEvents);
 });
 
-/* ── Inicialización ── */
 loadEvents();
