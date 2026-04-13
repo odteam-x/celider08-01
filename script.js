@@ -3,7 +3,7 @@
    script.js
 ══════════════════════════════════════════════ */
 
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGik1LqWl9av1p8AZDLU70YER-4pmap9dwNM6Fy4moXQziZeik8rIu0dJkAIzDc_4/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6IupcL_f_wjvPoTvvOT3ZskOR_H8dmdqDP_Tb-6RU5X1RPsvkOHhSeKebIgYBdvdM/exec';
 
 /* ── Hamburger menu ── */
 const ham  = document.getElementById('ham');
@@ -404,4 +404,126 @@ document.getElementById('cal-next').addEventListener('click', () => {
   renderCalendar(calYear, calMonth, calEvents);
 });
 
+/* ══════════════════════════════════════════════
+   TEMA — Claro / Oscuro
+══════════════════════════════════════════════ */
+(function initTheme() {
+  const html = document.documentElement;
+  const btn  = document.getElementById('themeToggle');
+  const saved = localStorage.getItem('celider-theme') || 'light';
+
+  html.setAttribute('data-theme', saved);
+
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('celider-theme', next);
+    });
+  }
+})();
+
 loadEvents();
+
+/* ══════════════════════════════════════════════
+   DOCUMENTOS — cargados desde Google Sheets
+══════════════════════════════════════════════ */
+(function initDocs() {
+  let allDocs = [];
+  let activeFilter = 'all';
+
+  const grid   = document.getElementById('doc-grid');
+  const empty  = document.getElementById('doc-empty');
+  const filters = document.getElementById('doc-filters');
+
+  if (!grid) return;
+
+  // Manejador de filtros
+  filters.addEventListener('click', e => {
+    const btn = e.target.closest('.doc-filter-btn');
+    if (!btn) return;
+    filters.querySelectorAll('.doc-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.cat;
+    renderDocs(allDocs, activeFilter);
+  });
+
+  // Carga desde Apps Script
+  async function fetchDocs() {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('PEGA-TU-URL-AQUI')) {
+      renderDocs([], 'all');
+      return;
+    }
+    try {
+      const res  = await fetch(`${APPS_SCRIPT_URL}?action=getDocs`);
+      const data = await res.json();
+      allDocs = Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.warn('CELIDER Documentos: No se pudieron cargar los documentos.', err);
+      allDocs = [];
+    }
+    renderDocs(allDocs, activeFilter);
+  }
+
+  function renderDocs(docs, cat) {
+    const filtered = cat === 'all' ? docs : docs.filter(d => d.category === cat);
+
+    // Quitar loading si sigue ahí
+    const loading = document.getElementById('doc-loading');
+    if (loading) loading.remove();
+
+    grid.innerHTML = '';
+
+    if (filtered.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    const catLabel = { talleres: 'Talleres', oficiales: 'Docs. Oficiales', generales: 'Docs. Generales' };
+
+    filtered.forEach(doc => {
+      const card = document.createElement('div');
+      card.className = 'doc-card';
+
+      const iconClass = doc.category === 'oficiales' ? 'ic-oficiales'
+                      : doc.category === 'generales'  ? 'ic-generales'
+                      : '';
+
+      const dateHtml = doc.date
+        ? `<div class="doc-card-date">${doc.date}</div>`
+        : '';
+
+      const actionHtml = doc.url
+        ? `<a href="${doc.url}" target="_blank" rel="noopener" class="doc-card-btn">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+               <polyline points="15 3 21 3 21 9"/>
+               <line x1="10" y1="14" x2="21" y2="3"/>
+             </svg>
+             Acceder
+           </a>`
+        : `<p class="doc-card-no-url">Sin enlace disponible</p>`;
+
+      card.innerHTML = `
+        <div class="doc-card-top">
+          <div class="doc-card-icon ${iconClass}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <div class="doc-card-meta">
+            <span class="doc-cat-badge cat-${doc.category}">${catLabel[doc.category] || doc.category}</span>
+            <div class="doc-card-title">${doc.title}</div>
+            ${dateHtml}
+          </div>
+        </div>
+        ${actionHtml}`;
+
+      grid.appendChild(card);
+    });
+  }
+
+  fetchDocs();
+})();
